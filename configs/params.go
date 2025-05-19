@@ -17,7 +17,7 @@ type config struct {
 	Host    string        `env:"APP_HOST,default=localhost" json:",omitempty"`
 	Port    string        `env:"APP_PORT,default=8080" json:",omitempty"`
 	Timeout time.Duration `env:"APP_TIMEOUT,default=1m" json:",omitempty"`
-	Prefix  string        `env:"APP_PREFIX,default=/develop" json:",omitempty"`
+	Prefix  string        `env:"APP_PREFIX,default=/" json:",omitempty"`
 }
 
 func SetEnv(ctx context.Context) error {

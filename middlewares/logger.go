@@ -1,18 +1,28 @@
 package middlewares
 
 import (
+	"backend-challenge/entities"
+	"backend-challenge/pkg/logging"
+	"context"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
-func ZapLoggerMiddleware(logger *zap.SugaredLogger) fiber.Handler {
+func LoggerMiddleware(logger *zap.SugaredLogger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		requestID := uuid.New().String()
+		ctx := c.UserContext()
+		logger := logger.With("request_id", requestID)
+		ctx = logging.WithLogger(ctx, logger)
+		ctx = context.WithValue(ctx, entities.RequestId, requestID)
+		c.SetUserContext(ctx)
+
 		start := time.Now()
 		err := c.Next()
 		stop := time.Now()
-
 		latency := stop.Sub(start)
 
 		logger.Infow("HTTP Request",

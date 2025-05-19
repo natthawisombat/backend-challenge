@@ -57,7 +57,7 @@ func (c *Setting) SetApp(ctx context.Context) error {
 	c.App.Use(recover.New(recover.Config{EnableStackTrace: true}))
 	c.App.Use(helmet.New())
 	c.App.Use(cors.New(cfg))
-	c.App.Use(middlewares.ZapLoggerMiddleware(c.Logger))
+	c.App.Use(middlewares.LoggerMiddleware(c.Logger))
 	c.App.Use(logger.New(logger.Config{
 		Format:     "${blue}${time} ${yellow}${status} - ${red}${latency} ${cyan}${method} ${path} ${green} ${ip} ${ua} ${reset}\n",
 		TimeFormat: "02-Jan-2006 15:04:05",

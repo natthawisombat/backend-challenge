@@ -19,8 +19,6 @@ import (
 )
 
 var (
-	// defaultLogger is the default logger. It is initialized once per package
-	// include upon calling DefaultLogger.
 	defaultLogger     *zap.SugaredLogger
 	defaultLoggerOnce sync.Once
 )
@@ -36,34 +34,29 @@ func (e PrettyJSONEncoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field
 	}
 
 	var pretty bytes.Buffer
-	err = json.Indent(&pretty, buf.Bytes(), "", "  ") // Indentation with two spaces
+	err = json.Indent(&pretty, buf.Bytes(), "", "  ")
 	if err != nil {
 		return nil, err
 	}
 
-	// Replace the buffer content with the pretty-printed JSON
 	buf = buffer.NewPool().Get()
 	buf.AppendBytes(pretty.Bytes())
 	return buf, nil
 }
 
-// NewPrettyJSONEncoder creates a new PrettyJSONEncoder with the given EncoderConfig.
 func NewPrettyJSONEncoder(cfg zapcore.EncoderConfig) zapcore.Encoder {
 	return PrettyJSONEncoder{Encoder: zapcore.NewJSONEncoder(cfg)}
 }
 
-// NewLogger creates a new logger with the given configuration.
 func NewLogger(level string, development bool) *zap.SugaredLogger {
 	var cores []zapcore.Core
 	var encoderConfig zapcore.EncoderConfig
 
 	nowStr := strings.Split(time.Now().Format("2006-01-02"), "-")
-	fmt.Println("PATH : ", L.LogPath, L.LogAge)
 	logPath := fmt.Sprintf("./assets/logger/%s_%s/%s", nowStr[0], nowStr[1], nowStr[2])
 	utils.EnsureFolderExists(logPath)
 	pathInfo := fmt.Sprintf("%s/info.json", logPath)
 	pathError := fmt.Sprintf("%s/error.json", logPath)
-
 	fileInfo := zapcore.AddSync(&lumberjack.Logger{
 		Filename:   pathInfo,
 		MaxSize:    L.LogSize,
@@ -100,16 +93,12 @@ func NewLogger(level string, development bool) *zap.SugaredLogger {
 	return logger.Sugar()
 }
 
-// NewLoggerFromEnv creates a new logger from the environment. It consumes
-// LOG_LEVEL for determining the level and LOG_MODE for determining the output
-// parameters.
 func NewLoggerFromEnv() *zap.SugaredLogger {
 	level := os.Getenv("LOG_LEVEL")
 	development := strings.ToLower(strings.TrimSpace(os.Getenv("LOG_MODE"))) == "development"
 	return NewLogger(level, development)
 }
 
-// DefaultLogger returns the default logger for the package.
 func DefaultLogger() *zap.SugaredLogger {
 	defaultLoggerOnce.Do(func() {
 		defaultLogger = NewLoggerFromEnv()
@@ -117,13 +106,10 @@ func DefaultLogger() *zap.SugaredLogger {
 	return defaultLogger
 }
 
-// WithLogger creates a new context with the provided logger attached.
 func WithLogger(ctx context.Context, logger *zap.SugaredLogger) context.Context {
 	return context.WithValue(ctx, entities.LoggerKey, logger)
 }
 
-// FromContext returns the logger stored in the context. If no such logger
-// exists, a default logger is returned.
 func FromContext(ctx context.Context) *zap.SugaredLogger {
 	if logger, ok := ctx.Value(entities.LoggerKey).(*zap.SugaredLogger); ok {
 		return logger
@@ -132,7 +118,7 @@ func FromContext(ctx context.Context) *zap.SugaredLogger {
 }
 
 func FromContextWithName(ctx context.Context, name string) *zap.SugaredLogger {
-	return FromContext(ctx).Named(name).With("ticket_id", ctx.Value(entities.TicketKey).(string))
+	return FromContext(ctx).Named(name).With("request_id", ctx.Value(entities.RequestId).(string))
 }
 
 const (
@@ -180,8 +166,6 @@ var developmentEncoderConfig = zapcore.EncoderConfig{
 	EncodeCaller:   zapcore.ShortCallerEncoder,
 }
 
-// levelToZapLevel converts the given string to the appropriate zap level
-// value.
 func levelToZapLevel(s string) zapcore.Level {
 	switch strings.ToUpper(strings.TrimSpace(s)) {
 	case levelDebug:
@@ -203,7 +187,6 @@ func levelToZapLevel(s string) zapcore.Level {
 	return zapcore.WarnLevel
 }
 
-// levelEncoder transforms a zap level to the associated stackdriver level.
 func levelEncoder() zapcore.LevelEncoder {
 	return func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
 		switch l {
@@ -225,7 +208,6 @@ func levelEncoder() zapcore.LevelEncoder {
 	}
 }
 
-// timeEncoder encodes the time as RFC3339 nano.
 func timeEncoder() zapcore.TimeEncoder {
 	return func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 		enc.AppendString(t.Format(time.RFC3339Nano))
