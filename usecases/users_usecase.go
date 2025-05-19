@@ -19,36 +19,33 @@ func NewHttpUser(validate *validator.Validate, repo userRepository) HttpUser {
 	return HttpUser{validate: validate, repo: repo}
 }
 
-func (uc *HttpUser) Create(c *fiber.Ctx) {
+func (uc *HttpUser) Create(c *fiber.Ctx) error {
 	var bodyRequest entities.User
 	if err := c.BodyParser(&bodyRequest); err != nil {
-		handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Create"})
-		return
+		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Create"})
 	}
 
+	// validate request body
 	err := uc.validate.Struct(bodyRequest)
 	if err != nil {
 		for _, err := range err.(validator.ValidationErrors) {
-			handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Create"})
-			return
+			return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Create"})
 		}
 	}
 
-	// Todo
 	// check duplicate
 	if err := uc.repo.CheckDuplicateUser(bodyRequest.Email, c.UserContext()); err != nil {
-		handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Create"})
-		return
+		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Create"})
 	}
 	// hash password
 	bodyRequest.Password = utils.Hash(bodyRequest.Password)
 	bodyRequest.CreatedAt = time.Now()
+
 	if err := uc.repo.Register(bodyRequest, c.UserContext()); err != nil {
-		handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Create"})
-		return
+		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Create"})
 	}
 
-	handlers.Response(c, entities.Response{Status: "OK", Message: "Register completed", StatusCode: 200}, map[string]interface{}{"function": "Create"})
+	return handlers.Response(c, entities.Response{Status: "OK", Message: "Register completed", StatusCode: 200}, map[string]interface{}{"function": "Create"})
 }
 
 func (uc *HttpUser) Get(c *fiber.Ctx) error {

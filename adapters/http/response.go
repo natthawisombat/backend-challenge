@@ -3,11 +3,12 @@ package adapters
 import (
 	"backend-challenge/entities"
 	"backend-challenge/pkg/logging"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func Response(c *fiber.Ctx, response entities.Response, options ...map[string]interface{}) {
+func Response(c *fiber.Ctx, response entities.Response, options ...map[string]interface{}) error {
 	ctx := c.UserContext()
 	logger := logging.FromContext(ctx)
 
@@ -29,5 +30,8 @@ func Response(c *fiber.Ctx, response entities.Response, options ...map[string]in
 		logger.Errorw("response error", fields...)
 	}
 
-	c.Status(response.StatusCode).JSON(response)
+	response.TransactionCode = fmt.Sprintf("%s", ctx.Value(entities.RequestId))
+	statusCode := response.StatusCode
+	response.StatusCode = 0
+	return c.Status(statusCode).JSON(response)
 }
