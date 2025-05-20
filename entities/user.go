@@ -13,3 +13,8 @@ type User struct {
 	Password  string             `bson:"password" json:"password" validate:"required"`
 	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
 }
+
+type Login struct {
+	Email    string `bson:"email" json:"email" validate:"required,email"`
+	Password string `bson:"password" json:"password" validate:"required"`
+}

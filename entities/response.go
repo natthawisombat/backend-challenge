@@ -7,4 +7,5 @@ type Response struct {
 	ErrorMessage    string `json:"errorMessage,omitempty"`
 	ErrorCode       string `json:"errorCode,omitempty"`
 	TransactionCode string `json:"transactionCode,omitempty"`
+	Data            interface{}
 }

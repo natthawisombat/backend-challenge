@@ -5,4 +5,5 @@ type contextKey string
 const (
 	LoggerKey = contextKey("logger")
 	RequestId = contextKey("request_id")
+	UserIDKey = contextKey("user_id")
 )

@@ -19,6 +19,38 @@ func NewHttpUser(validate *validator.Validate, repo userRepository) HttpUser {
 	return HttpUser{validate: validate, repo: repo}
 }
 
+func (uc *HttpUser) Login(c *fiber.Ctx) error {
+	var bodyRequest entities.Login
+	if err := c.BodyParser(&bodyRequest); err != nil {
+		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Login"})
+	}
+
+	// validate request body
+	err := uc.validate.Struct(bodyRequest)
+	if err != nil {
+		for _, err := range err.(validator.ValidationErrors) {
+			return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Login"})
+		}
+	}
+
+	//hash
+	bodyRequest.Password = utils.Hash(bodyRequest.Password)
+	userId, err := uc.repo.Login(bodyRequest, c.UserContext())
+	if err != nil {
+		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Login"})
+	}
+
+	authKey, err := utils.GenerateToken(userId, time.Duration(24*time.Hour))
+	if err != nil {
+		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Login"})
+	}
+
+	return handlers.Response(c,
+		entities.Response{Status: "OK", Message: "Success", StatusCode: 200, Data: map[string]interface{}{
+			"accessKey": authKey,
+		}}, map[string]interface{}{"function": "Login"})
+}
+
 func (uc *HttpUser) Create(c *fiber.Ctx) error {
 	var bodyRequest entities.User
 	if err := c.BodyParser(&bodyRequest); err != nil {
@@ -39,7 +71,7 @@ func (uc *HttpUser) Create(c *fiber.Ctx) error {
 	}
 	// hash password
 	bodyRequest.Password = utils.Hash(bodyRequest.Password)
-	bodyRequest.CreatedAt = time.Now()
+	bodyRequest.CreatedAt = time.Now().Add(7 * time.Hour)
 
 	if err := uc.repo.Register(bodyRequest, c.UserContext()); err != nil {
 		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Create"})
