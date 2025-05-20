@@ -6,7 +6,6 @@ import (
 	"backend-challenge/routers"
 	"backend-challenge/utils"
 	"context"
-	"log"
 	"os/signal"
 	"syscall"
 
@@ -14,10 +13,7 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	godotenv.Load()
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	logger := logging.NewLoggerFromEnv()

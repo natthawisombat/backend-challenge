@@ -5,6 +5,99 @@ Build a simple RESTful API in Golang that manages a list of users. Use MongoDB f
 
 ---
 
+## Project Setup
+
+Prerequisites:
+
+Docker & Docker Compose
+
+Environment Variables (in .env file):
+
+MONGO_URI=mongodb://appuser:apppassword@mongodb:27017/?authSource=appdb
+MONGO_DB=appdb
+MONGO_INITDB_ROOT_USERNAME=root
+MONGO_INITDB_ROOT_PASSWORD=rootpassword
+MONGO_INITDB_DATABASE=appdb
+APP_DB_USER=appuser
+APP_DB_PASS=apppassword
+JWT_SECRET=backend-challenge
+
+Run the app:
+
+docker-compose up --build
+
+App will be available at: http://localhost:8080
+
+## JWT Token Usage
+
+After login (POST /auth/login), you’ll receive:
+
+{
+  "status": "OK",
+  "data": {
+    "accessToken": "<jwt_token_here>"
+  }
+}
+
+Use this token in the Authorization header:
+
+Authorization: Bearer <jwt_token_here>
+
+## Sample API Requests
+
+Register
+
+POST /auth/register
+{
+  "name": "Tee",
+  "email": "tee@email.com",
+  "password": "12345678"
+}
+
+Login
+
+POST /auth/login
+{
+  "email": "tee@email.com",
+  "password": "12345678"
+}
+
+Get All Users (Protected)
+
+GET /users
+Authorization: Bearer <token>
+
+Get by ID
+
+GET /users/:id
+Authorization: Bearer <token>
+
+Update User
+
+PATCH /users/:id
+{
+  "name": "Updated Name",
+  "email": "updated@email.com"
+}
+
+Delete User
+
+DELETE /users/:id
+
+## Assumptions / Notes
+
+Password is hashed (not bcrypt in this example)
+
+JWT is short-lived (24h) and HMAC signed
+
+MongoDB initialized via init-mongo.js
+
+Unit tests mock repository for speed and isolation
+
+Logging uses zap with daily file rotation
+
+---
+
 ## Requirements
 
 ### 1. User Model

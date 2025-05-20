@@ -1,2 +1,3 @@
 *.exe
 assets/
+mongo_data/
