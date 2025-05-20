@@ -47,7 +47,7 @@ func (uc *HttpUser) Login(c *fiber.Ctx) error {
 
 	return handlers.Response(c,
 		entities.Response{Status: "OK", Message: "Success", StatusCode: 200, Data: map[string]interface{}{
-			"accessKey": authKey,
+			"accessToken": authKey,
 		}}, map[string]interface{}{"function": "Login"})
 }
 
@@ -81,17 +81,55 @@ func (uc *HttpUser) Create(c *fiber.Ctx) error {
 }
 
 func (uc *HttpUser) Get(c *fiber.Ctx) error {
-	return nil
+	userId := c.Params("id")
+	user, err := uc.repo.GetUser(userId, c.UserContext())
+	if err != nil {
+		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER404", StatusCode: 200}, map[string]interface{}{"function": "Get"})
+	}
+
+	return handlers.Response(c, entities.Response{Status: "OK", Data: user, StatusCode: 200}, map[string]interface{}{"function": "Get"})
 }
 
 func (uc *HttpUser) GetAll(c *fiber.Ctx) error {
-	return nil
+	// check duplicate
+	users, err := uc.repo.GetUserAll(c.UserContext())
+	if err != nil {
+		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "GetAll"})
+	}
+
+	return handlers.Response(c, entities.Response{Status: "OK", Data: users, StatusCode: 200}, map[string]interface{}{"function": "GetAll"})
 }
 
 func (uc *HttpUser) Update(c *fiber.Ctx) error {
-	return nil
+	userId := c.Params("id")
+	var bodyRequest entities.UpdateUserRequest
+	if err := c.BodyParser(&bodyRequest); err != nil {
+		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Update"})
+	}
+
+	// validate request body
+	err := uc.validate.Struct(bodyRequest)
+	if err != nil {
+		for _, err := range err.(validator.ValidationErrors) {
+			return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Update"})
+		}
+	}
+
+	if err := uc.repo.CheckDuplicateUser(bodyRequest.Email, c.UserContext()); err != nil {
+		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Update"})
+	}
+
+	if err := uc.repo.UpdateUser(userId, bodyRequest, c.UserContext()); err != nil {
+		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER400", StatusCode: 400}, map[string]interface{}{"function": "Update"})
+	}
+
+	return handlers.Response(c, entities.Response{Status: "OK", Message: "Update success", StatusCode: 200}, map[string]interface{}{"function": "Update"})
 }
 
 func (uc *HttpUser) Delete(c *fiber.Ctx) error {
-	return nil
+	userId := c.Params("id")
+	if err := uc.repo.DeleteUser(userId, c.UserContext()); err != nil {
+		return handlers.Response(c, entities.Response{Status: "ER", ErrorMessage: err.Error(), ErrorCode: "ER500", StatusCode: 500}, map[string]interface{}{"function": "Delete"})
+	}
+	return handlers.Response(c, entities.Response{Status: "OK", Message: "Delete success", StatusCode: 200}, map[string]interface{}{"function": "Delete"})
 }

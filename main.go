@@ -4,6 +4,7 @@ import (
 	"backend-challenge/configs"
 	"backend-challenge/pkg/logging"
 	"backend-challenge/routers"
+	"backend-challenge/utils"
 	"context"
 	"log"
 	"os/signal"
@@ -31,6 +32,9 @@ func main() {
 
 	routers.SetupRoutes(app)
 	errChan := app.RunApp(ctx)
+
+	// task background process
+	utils.StartUserCountLogger(ctx, app.DBMongo.DB, logger)
 
 	select {
 	case <-ctx.Done():

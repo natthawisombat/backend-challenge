@@ -27,9 +27,9 @@ func SetupRoutes(cfg *configs.Setting) {
 	users := prefix.Group("/users")
 	users.Use(middlewares.JWTMiddleware())
 	users.Get("/", httpUser.GetAll)
-	// users.Get("/:id")
-	// users.Patch("/:id")
-	// users.Delete("/:id")
+	users.Get("/:id", httpUser.Get)
+	users.Patch("/:id", httpUser.Update)
+	users.Delete("/:id", httpUser.Delete)
 
 	prefix.Get("/healthcheck", func(c *fiber.Ctx) error {
 		return handlers.Response(c, entities.Response{Status: "OK", Message: "Healthy"}, map[string]interface{}{"function": "Healthcheck"})
